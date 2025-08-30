@@ -1,320 +1,39 @@
 import pandas as pd
-import numpy as np
 import streamlit as st
 from src.cloud_io import MongoIO
 from src.constants import SESSION_PRODUCT_KEY
 from src.utils import fetch_product_names_from_cloud
 from src.data_report.generate_data_report import DashboardGenerator
 
-# Page configuration
-st.set_page_config(
-    page_title="Review Analysis",
-    page_icon="📊",
-    layout="wide"
-)
-
 mongo_con = MongoIO()
 
-# Custom CSS for better styling
-st.markdown("""
-<style>
-.main-header {
-    background: linear-gradient(90deg, #1f77b4, #17a2b8);
-    color: white;
-    padding: 2rem;
-    border-radius: 10px;
-    text-align: center;
-    margin-bottom: 2rem;
-}
-
-.analysis-card {
-    background-color: #f8f9fa;
-    padding: 1.5rem;
-    border-radius: 10px;
-    border: 1px solid #dee2e6;
-    margin: 1rem 0;
-}
-
-.ml-promo {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 1.5rem;
-    border-radius: 15px;
-    text-align: center;
-}
-
-.feature-list {
-    background-color: rgba(255,255,255,0.1);
-    padding: 1rem;
-    border-radius: 8px;
-    margin: 1rem 0;
-}
-
-.btn-container {
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-    margin-top: 1rem;
-}
-</style>
-""", unsafe_allow_html=True)
 
 def create_analysis_page(review_data: pd.DataFrame):
     if review_data is not None:
-        
-        # Main header
-        st.markdown("""
-        <div class="main-header">
-            <h1>📊 Myntra Review Analysis Dashboard</h1>
-            <p>Comprehensive insights from your scraped product reviews</p>
-        </div>
-        """, unsafe_allow_html=True)
 
-        # Data overview
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            st.metric("📦 Total Products", review_data['Product Name'].nunique())
-        
-        with col2:
-            st.metric("📝 Total Reviews", len(review_data))
-        
-        with col3:
-            avg_rating = review_data['Over_All_Rating'].astype(str).str.replace('₹', '').astype(float, errors='ignore').mean()
-            st.metric("⭐ Avg Rating", f"{avg_rating:.1f}" if not pd.isna(avg_rating) else "N/A")
-        
-        with col4:
-            unique_users = review_data['Name'].nunique()
-            st.metric("👥 Unique Reviewers", unique_users)
+        st.dataframe(review_data)
+        if st.button("Generate Analysis"):
+            dashboard = DashboardGenerator(review_data)
 
-        st.markdown("---")
+            # Display general information
+            dashboard.display_general_info()
 
-        # Data preview
-        with st.expander("🔍 **Preview Your Data**", expanded=False):
-            st.dataframe(
-                review_data.head(10), 
-                use_container_width=True,
-                height=400
-            )
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                st.download_button(
-                    label="📥 Download Full Dataset",
-                    data=review_data.to_csv(index=False),
-                    file_name=f"myntra_reviews_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.csv",
-                    mime="text/csv"
-                )
-            with col2:
-                st.info(f"💡 Dataset contains {len(review_data.columns)} columns and {len(review_data)} rows")
+            # Display product-specific sections
+            dashboard.display_product_sections()
 
-        # Analysis options
-        st.markdown("## 🎯 Choose Your Analysis Type")
-        
-        analysis_col1, analysis_col2, analysis_col3 = st.columns([1, 1, 1])
-        
-        with analysis_col1:
+
+try:
+
+    if st.session_state.data:
+        data = mongo_con.get_reviews(product_name=st.session_state[SESSION_PRODUCT_KEY])
+        create_analysis_page(data)
+
+    else:
+        with st.sidebar:
             st.markdown("""
-            <div class="analysis-card">
-                <h3>📈 Basic Analytics</h3>
-                <p>Get fundamental insights including:</p>
-                <ul>
-                    <li>📊 Rating distributions and trends</li>
-                    <li>💰 Price comparisons across products</li>
-                    <li>🏷️ Product performance overview</li>
-                    <li>📝 Review summaries and highlights</li>
-                    <li>📉 Visual charts and graphs</li>
-                </ul>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            if st.button("🚀 **Generate Basic Analysis**", type="primary", use_container_width=True):
-                with st.spinner("🔄 Generating comprehensive analysis..."):
-                    dashboard = DashboardGenerator(review_data)
-                    
-                    # Display general information
-                    dashboard.display_general_info()
-                    
-                    st.markdown("---")
-                    
-                    # Display product-specific sections
-                    dashboard.display_product_sections()
-                    
-                    st.success("✅ Basic analysis completed!")
-        
-        with analysis_col2:
-            st.markdown("""
-            <div class="ml-promo">
-                <h3>🤖 Advanced ML Analysis</h3>
-                <p>Unlock deeper insights with AI-powered analytics:</p>
-                <div class="feature-list">
-                    <strong>🧠 Sentiment Analysis</strong><br>
-                    <small>Emotion detection and sentiment scoring</small><br><br>
-                    
-                    <strong>🔍 Review Quality Detection</strong><br>
-                    <small>Identify fake reviews and quality assessment</small><br><br>
-                    
-                    <strong>💰 Price Prediction</strong><br>
-                    <small>Fair pricing and value-for-money analysis</small><br><br>
-                    
-                    <strong>🎯 Smart Recommendations</strong><br>
-                    <small>AI-powered product suggestions</small>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            if st.button("🚀 **Launch ML Analysis**", type="secondary", use_container_width=True):
-                st.switch_page("pages/ml_analysis.py")
-
-        with analysis_col3:
-            st.markdown("""
-            <div style="background: linear-gradient(135deg, #ff7675, #d63031); color: white; padding: 1.5rem; border-radius: 15px; text-align: center;">
-                <h3>🚀 Revolutionary Analytics</h3>
-                <p><strong>WORLD'S FIRST</strong> insights that NO e-commerce platform offers:</p>
-                <div style="background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 8px; margin: 1rem 0;">
-                    <strong>🎭 Emotional Journey Mapping</strong><br>
-                    <small>Track customer emotions from purchase to review</small><br><br>
-                    
-                    <strong>🧠 Psychological Buyer Profiling</strong><br>
-                    <small>Deep psychology analysis of buyer behavior</small><br><br>
-                    
-                    <strong>🕵️ Hidden Problem Detection</strong><br>
-                    <small>Find issues buried in positive reviews</small><br><br>
-                    
-                    <strong>🔮 Future Trend Prediction</strong><br>
-                    <small>Forecast upcoming fashion trends</small>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            if st.button("🚀 **Revolutionary Analytics**", type="primary", use_container_width=True):
-                st.switch_page("pages/revolutionary_analytics.py")
-
-        # Quick insights section
-        st.markdown("---")
-        st.markdown("## ⚡ Quick Insights")
-        
-        insight_col1, insight_col2, insight_col3 = st.columns(3)
-        
-        with insight_col1:
-            # Top rated product
-            try:
-                avg_ratings = review_data.groupby('Product Name')['Over_All_Rating'].first()
-                top_product = avg_ratings.idxmax()
-                top_rating = avg_ratings.max()
-                
-                st.markdown(f"""
-                <div class="analysis-card">
-                    <h4>🏆 Top Rated Product</h4>
-                    <p><strong>{top_product}</strong></p>
-                    <p>Rating: {top_rating}⭐</p>
-                </div>
-                """, unsafe_allow_html=True)
-            except:
-                st.info("Unable to determine top rated product")
-        
-        with insight_col2:
-            # Most reviewed product
-            try:
-                review_counts = review_data['Product Name'].value_counts()
-                most_reviewed = review_counts.index[0]
-                review_count = review_counts.iloc[0]
-                
-                st.markdown(f"""
-                <div class="analysis-card">
-                    <h4>� Most Reviewed</h4>
-                    <p><strong>{most_reviewed}</strong></p>
-                    <p>{review_count} reviews</p>
-                </div>
-                """, unsafe_allow_html=True)
-            except:
-                st.info("Unable to determine most reviewed product")
-        
-        with insight_col3:
-            # Price range
-            try:
-                # Clean price data with improved handling for concatenated prices
-                def clean_price_for_display(price_value):
-                    """Clean concatenated price data"""
-                    if pd.isna(price_value):
-                        return np.nan
-                    
-                    price_str = str(price_value).strip()
-                    
-                    # Handle concatenated prices like ₹919₹919₹919...
-                    if price_str.count('₹') > 1:
-                        import re
-                        # Extract first price value
-                        price_match = re.search(r'₹(\d+)', price_str)
-                        if price_match:
-                            return float(price_match.group(1))
-                        else:
-                            # Fallback: extract first numeric sequence
-                            numbers_only = re.sub(r'[^\d]', '', price_str)
-                            if numbers_only:
-                                # Estimate original price length (typically 3-5 digits for clothing)
-                                estimated_length = min(4, len(numbers_only) // price_str.count('₹'))
-                                return float(numbers_only[:estimated_length]) if estimated_length > 0 else np.nan
-                            return np.nan
-                    else:
-                        # Regular price cleaning
-                        cleaned = price_str.replace('₹', '').replace(',', '').strip()
-                        try:
-                            return float(cleaned) if cleaned else np.nan
-                        except ValueError:
-                            return np.nan
-                
-                price_data = review_data['Price'].apply(clean_price_for_display)
-                min_price = price_data.min()
-                max_price = price_data.max()
-                
-                st.markdown(f"""
-                <div class="analysis-card">
-                    <h4>💰 Price Range</h4>
-                    <p><strong>₹{min_price:.0f} - ₹{max_price:.0f}</strong></p>
-                    <p>Across all products</p>
-                </div>
-                """, unsafe_allow_html=True)
-            except:
-                st.info("Unable to determine price range")
-
-def main():
-    """Main function with error handling"""
-    try:
-        if st.session_state.get("data", False):
-            data = mongo_con.get_reviews(product_name=st.session_state[SESSION_PRODUCT_KEY])
-            if data is not None and not data.empty:
-                create_analysis_page(data)
-            else:
-                st.error("❌ No data found for the selected product.")
-                st.info("🔄 Try scraping some reviews first from the main page.")
-        else:
-            st.markdown("""
-            <div class="main-header">
-                <h1>📊 Review Analysis</h1>
-                <p>No data available for analysis</p>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            st.markdown("""
-            ### 🚀 Get Started
-            
-            To analyze product reviews, you need to:
-            
-            1. **📱 Go to the main page** - Navigate to the homepage
-            2. **🔍 Search for products** - Enter product keywords (e.g., "white shoes")
-            3. **📊 Scrape reviews** - Click "Scrape Reviews" to collect data
-            4. **📈 Analyze results** - Return here for comprehensive analysis
-            
+            No Data Available for analysis. Please Go to search page for analysis.
             """)
-            
-            if st.button("🏠 Go to Main Page", type="primary"):
-                st.switch_page("app.py")
-                
-    except Exception as e:
-        st.error(f"❌ An error occurred: {str(e)}")
-        st.info("🔄 Please try refreshing the page or contact support.")
-
-if __name__ == "__main__":
-    main()
+except AttributeError:
+    product_name = None
+    st.markdown(""" # No Data Available for analysis.""")
 
