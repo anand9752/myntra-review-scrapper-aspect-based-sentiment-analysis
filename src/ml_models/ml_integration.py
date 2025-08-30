@@ -101,12 +101,33 @@ class MLAnalyzer:
                         try:
                             # Remove currency symbols and convert to float
                             if isinstance(value, str):
-                                # Remove ₹ symbol and any commas
-                                cleaned_value = str(value).replace('₹', '').replace(',', '').strip()
-                                return float(cleaned_value)
+                                # Handle concatenated price values like ₹919₹919₹919...
+                                value_str = str(value).strip()
+                                
+                                # If it's a price column and has multiple ₹ symbols, extract the first price
+                                if col == 'Price' and value_str.count('₹') > 1:
+                                    # Extract first price value
+                                    import re
+                                    price_match = re.search(r'₹(\d+)', value_str)
+                                    if price_match:
+                                        cleaned_value = price_match.group(1)
+                                    else:
+                                        # Fallback: remove all ₹ and take first numeric part
+                                        cleaned_value = re.sub(r'[^\d]', '', value_str)
+                                        if cleaned_value:
+                                            # Take only the first occurrence length (e.g., if ₹919₹919, take first 3 digits)
+                                            original_length = len(re.search(r'\d+', value_str.replace('₹', '')).group()) if re.search(r'\d+', value_str.replace('₹', '')) else 3
+                                            cleaned_value = cleaned_value[:original_length] if len(cleaned_value) >= original_length else cleaned_value
+                                        else:
+                                            return np.nan
+                                else:
+                                    # Regular cleaning for non-concatenated values
+                                    cleaned_value = value_str.replace('₹', '').replace(',', '').strip()
+                                
+                                return float(cleaned_value) if cleaned_value else np.nan
                             else:
                                 return float(value)
-                        except (ValueError, TypeError):
+                        except (ValueError, TypeError, AttributeError):
                             return np.nan
                     
                     self.processed_data[col] = self.processed_data[col].apply(convert_to_numeric)

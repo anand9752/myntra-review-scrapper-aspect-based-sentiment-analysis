@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import streamlit as st
 from src.cloud_io import MongoIO
 from src.constants import SESSION_PRODUCT_KEY
@@ -110,7 +111,7 @@ def create_analysis_page(review_data: pd.DataFrame):
         # Analysis options
         st.markdown("## 🎯 Choose Your Analysis Type")
         
-        analysis_col1, analysis_col2 = st.columns([1, 1])
+        analysis_col1, analysis_col2, analysis_col3 = st.columns([1, 1, 1])
         
         with analysis_col1:
             st.markdown("""
@@ -165,6 +166,30 @@ def create_analysis_page(review_data: pd.DataFrame):
             if st.button("🚀 **Launch ML Analysis**", type="secondary", use_container_width=True):
                 st.switch_page("pages/ml_analysis.py")
 
+        with analysis_col3:
+            st.markdown("""
+            <div style="background: linear-gradient(135deg, #ff7675, #d63031); color: white; padding: 1.5rem; border-radius: 15px; text-align: center;">
+                <h3>🚀 Revolutionary Analytics</h3>
+                <p><strong>WORLD'S FIRST</strong> insights that NO e-commerce platform offers:</p>
+                <div style="background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 8px; margin: 1rem 0;">
+                    <strong>🎭 Emotional Journey Mapping</strong><br>
+                    <small>Track customer emotions from purchase to review</small><br><br>
+                    
+                    <strong>🧠 Psychological Buyer Profiling</strong><br>
+                    <small>Deep psychology analysis of buyer behavior</small><br><br>
+                    
+                    <strong>🕵️ Hidden Problem Detection</strong><br>
+                    <small>Find issues buried in positive reviews</small><br><br>
+                    
+                    <strong>🔮 Future Trend Prediction</strong><br>
+                    <small>Forecast upcoming fashion trends</small>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            if st.button("🚀 **Revolutionary Analytics**", type="primary", use_container_width=True):
+                st.switch_page("pages/revolutionary_analytics.py")
+
         # Quick insights section
         st.markdown("---")
         st.markdown("## ⚡ Quick Insights")
@@ -208,9 +233,38 @@ def create_analysis_page(review_data: pd.DataFrame):
         with insight_col3:
             # Price range
             try:
-                # Clean price data
-                price_data = review_data['Price'].astype(str).str.replace('₹', '').str.replace(',', '')
-                price_data = pd.to_numeric(price_data, errors='coerce')
+                # Clean price data with improved handling for concatenated prices
+                def clean_price_for_display(price_value):
+                    """Clean concatenated price data"""
+                    if pd.isna(price_value):
+                        return np.nan
+                    
+                    price_str = str(price_value).strip()
+                    
+                    # Handle concatenated prices like ₹919₹919₹919...
+                    if price_str.count('₹') > 1:
+                        import re
+                        # Extract first price value
+                        price_match = re.search(r'₹(\d+)', price_str)
+                        if price_match:
+                            return float(price_match.group(1))
+                        else:
+                            # Fallback: extract first numeric sequence
+                            numbers_only = re.sub(r'[^\d]', '', price_str)
+                            if numbers_only:
+                                # Estimate original price length (typically 3-5 digits for clothing)
+                                estimated_length = min(4, len(numbers_only) // price_str.count('₹'))
+                                return float(numbers_only[:estimated_length]) if estimated_length > 0 else np.nan
+                            return np.nan
+                    else:
+                        # Regular price cleaning
+                        cleaned = price_str.replace('₹', '').replace(',', '').strip()
+                        try:
+                            return float(cleaned) if cleaned else np.nan
+                        except ValueError:
+                            return np.nan
+                
+                price_data = review_data['Price'].apply(clean_price_for_display)
                 min_price = price_data.min()
                 max_price = price_data.max()
                 

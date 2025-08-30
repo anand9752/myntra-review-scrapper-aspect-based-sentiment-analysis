@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -105,10 +106,38 @@ class DashboardGenerator:
 
         # Data preprocessing
         self.data['Over_All_Rating'] = pd.to_numeric(self.data['Over_All_Rating'], errors='coerce')
-        self.data['Price'] = pd.to_numeric(
-            self.data['Price'].astype(str).str.replace("₹", "").str.replace(",", ""), 
-            errors='coerce'
-        )
+        # Clean and convert price data with improved handling for concatenated prices
+        def clean_price_data(price_value):
+            """Clean concatenated price data"""
+            if pd.isna(price_value):
+                return np.nan
+            
+            price_str = str(price_value).strip()
+            
+            # Handle concatenated prices like ₹919₹919₹919...
+            if price_str.count('₹') > 1:
+                import re
+                # Extract first price value
+                price_match = re.search(r'₹(\d+)', price_str)
+                if price_match:
+                    return float(price_match.group(1))
+                else:
+                    # Fallback: extract first numeric sequence
+                    numbers_only = re.sub(r'[^\d]', '', price_str)
+                    if numbers_only:
+                        # Estimate original price length (typically 3-5 digits for clothing)
+                        estimated_length = min(4, len(numbers_only) // price_str.count('₹'))
+                        return float(numbers_only[:estimated_length]) if estimated_length > 0 else np.nan
+                    return np.nan
+            else:
+                # Regular price cleaning
+                cleaned = price_str.replace('₹', '').replace(',', '').strip()
+                try:
+                    return float(cleaned) if cleaned else np.nan
+                except ValueError:
+                    return np.nan
+        
+        self.data['Price'] = self.data['Price'].apply(clean_price_data)
         self.data["Rating"] = pd.to_numeric(self.data['Rating'], errors='coerce')
 
         # Key metrics in columns
