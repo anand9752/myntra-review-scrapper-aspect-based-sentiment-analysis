@@ -15,12 +15,24 @@ class ScrapeReviews:
                  product_name:str,
                  no_of_products:int):
         options = Options()
-        # options.add_argument("--no-sandbox")
-        # options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--disable-gpu")
+        options.add_argument("--remote-debugging-port=9222")
+        options.add_argument("--disable-extensions")
+        options.add_argument("--disable-plugins")
+        options.add_argument("--window-size=1920,1080")
+        # Uncomment the line below for headless mode (no browser window)
         # options.add_argument('--headless')
         
-        # Start a new Chrome browser session
-        self.driver = webdriver.Chrome(options=options)
+        # Start a new Chrome browser session with better error handling
+        try:
+            self.driver = webdriver.Chrome(options=options)
+            self.driver.implicitly_wait(10)
+            self.driver.set_page_load_timeout(30)
+        except Exception as e:
+            print(f"Failed to initialize Chrome driver: {e}")
+            raise
 
         self.product_name = product_name
         self.no_of_products = no_of_products
@@ -30,14 +42,20 @@ class ScrapeReviews:
 
     def scrape_product_urls(self, product_name):
         try:
+            # Check if driver is still available
+            if not self.driver or not self.driver.service.is_connectable():
+                raise Exception("WebDriver connection lost")
+                
             search_string = product_name.replace(" ","-")
-            # no_of_products = int(self.request.form['prod_no'])
-
             encoded_query = quote(search_string)
-            # Navigate to the URL
-            self.driver.get(
-                f"https://www.myntra.com/{search_string}?rawQuery={encoded_query}"
-            )
+            
+            # Navigate to the URL with retry mechanism
+            url = f"https://www.myntra.com/{search_string}?rawQuery={encoded_query}"
+            print(f"Navigating to: {url}")
+            
+            self.driver.get(url)
+            time.sleep(3)  # Wait for page to load
+            
             myntra_text = self.driver.page_source
             myntra_html = bs(myntra_text, "html.parser")
             pclass = myntra_html.findAll("ul", {"class": "results-base"})
@@ -53,6 +71,7 @@ class ScrapeReviews:
             return product_urls
 
         except Exception as e:
+            print(f"Error in scrape_product_urls: {str(e)}")
             raise CustomException(e, sys)
 
     def extract_reviews(self, product_link):
@@ -231,7 +250,19 @@ class ScrapeReviews:
             
             # return columns, values
         
-    
-
         except Exception as e:
+            print(f"Error in get_review_data: {str(e)}")
+            self.cleanup()
             raise CustomException(e, sys)
+        finally:
+            # Always cleanup driver
+            self.cleanup()
+    
+    def cleanup(self):
+        """Clean up the WebDriver instance."""
+        try:
+            if hasattr(self, 'driver') and self.driver:
+                self.driver.quit()
+                print("WebDriver cleaned up successfully")
+        except Exception as e:
+            print(f"Error during cleanup: {str(e)}")
