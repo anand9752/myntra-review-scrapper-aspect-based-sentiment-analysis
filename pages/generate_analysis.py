@@ -13,8 +13,13 @@ mongo_con = MongoIO()
 
 def create_analysis_page(review_data: pd.DataFrame):
     if review_data is not None:
-
-        st.dataframe(review_data)
+        
+        # Show data source info
+        st.info(f"📊 **Analyzing {len(review_data)} reviews** for product: **{st.session_state.get(SESSION_PRODUCT_KEY, 'Unknown Product')}**")
+        
+        # Show data preview with option to expand
+        with st.expander("👀 View Raw Data", expanded=False):
+            st.dataframe(review_data, use_container_width=True)
         
         # Create tabs for different types of analysis
         tab1, tab2, tab3 = st.tabs(["📊 General Analysis", "🎯 Aspect-Based Analysis", "📈 ABSA Insights"])
@@ -266,18 +271,153 @@ def display_absa_insights(analysis_results):
         )
 
 
+def show_no_data_message():
+    """Show message when no data is available."""
+    st.markdown("""
+    # 📊 ABSA Analysis Dashboard
+    
+    ### 🚫 No Data Available for Analysis
+    
+    To perform Aspect-Based Sentiment Analysis, you need to first scrape some reviews.
+    
+    #### 🔄 How to Get Started:
+    
+    1. **Go to the Home Page** (Main app)
+    2. **Choose one of two options:**
+       - 🔗 **URL Scraping**: Paste a direct Myntra product URL
+       - 🔍 **Search Scraping**: Search for products by keywords
+    3. **Extract Reviews** using either method
+    4. **Return here** to perform ABSA analysis
+    
+    #### 💡 Example URLs:
+    ```
+    https://www.myntra.com/tshirts/roadster/roadster-men-navy-blue-printed-cotton-t-shirt/12345678/buy
+    https://www.myntra.com/jeans/levis/levis-511-slim-fit-mid-rise-clean-look-stretchable-jeans/67890123/buy
+    ```
+    
+    #### 🔍 Example Search Terms:
+    - "white running shoes"
+    - "cotton casual shirts" 
+    - "denim jeans men"
+    - "women ethnic wear"
+    """)
+    
+    with st.sidebar:
+        st.markdown("""
+        ### 🎯 Quick Guide
+        
+        **No Data Available**
+        
+        Please go to the main page and:
+        1. Scrape reviews using URL or search
+        2. Return here for analysis
+        
+        **Need Help?**
+        - Make sure you have a stable internet connection
+        - Verify Myntra URLs are complete and valid
+        - Try different search keywords if no results
+        """)
+
+
 try:
-
-    if st.session_state.data:
-        data = mongo_con.get_reviews(product_name=st.session_state[SESSION_PRODUCT_KEY])
-        create_analysis_page(data)
-
+    # Check if we have scraped data in session state (from main app)
+    if st.session_state.get("data", False) and "scraped_reviews" in st.session_state:
+        review_data = st.session_state["scraped_reviews"]
+        st.success("✅ Using recently scraped data from the main page")
+        create_analysis_page(review_data)
+    
+    # Fallback: check if we have data from MongoDB (legacy method)
+    elif st.session_state.get("data", False) and SESSION_PRODUCT_KEY in st.session_state:
+        mongo_data = mongo_con.get_reviews(product_name=st.session_state[SESSION_PRODUCT_KEY])
+        if mongo_data is not None and len(mongo_data) > 0:
+            st.info("📂 Using data from database")
+            create_analysis_page(mongo_data)
+        else:
+            st.warning("⚠️ No data found in database for the selected product")
+            show_no_data_message()
+    
     else:
-        with st.sidebar:
-            st.markdown("""
-            No Data Available for analysis. Please Go to search page for analysis.
-            """)
+        show_no_data_message()
+
 except AttributeError:
-    product_name = None
-    st.markdown(""" # No Data Available for analysis.""")
+    show_no_data_message()
+except Exception as e:
+    st.error(f"❌ Error loading data: {str(e)}")
+    show_no_data_message()
+
+
+def show_no_data_message():
+    """Show message when no data is available."""
+    st.markdown("""
+    # 📊 ABSA Analysis Dashboard
+    
+    ### 🚫 No Data Available for Analysis
+    
+    To perform Aspect-Based Sentiment Analysis, you need to first scrape some reviews.
+    
+    #### 🔄 How to Get Started:
+    
+    1. **Go to the Home Page** (Main app)
+    2. **Choose one of two options:**
+       - 🔗 **URL Scraping**: Paste a direct Myntra product URL
+       - 🔍 **Search Scraping**: Search for products by keywords
+    3. **Extract Reviews** using either method
+    4. **Return here** to perform ABSA analysis
+    
+    #### 💡 Example URLs:
+    ```
+    https://www.myntra.com/tshirts/roadster/roadster-men-navy-blue-printed-cotton-t-shirt/12345678/buy
+    https://www.myntra.com/jeans/levis/levis-511-slim-fit-mid-rise-clean-look-stretchable-jeans/67890123/buy
+    ```
+    
+    #### 🔍 Example Search Terms:
+    - "white running shoes"
+    - "cotton casual shirts" 
+    - "denim jeans men"
+    - "women ethnic wear"
+    """)
+    
+    with st.sidebar:
+        st.markdown("""
+        ### 🎯 Quick Guide
+        
+        **No Data Available**
+        
+        Please go to the main page and:
+        1. Scrape reviews using URL or search
+        2. Return here for analysis
+        
+        **Need Help?**
+        - Make sure you have a stable internet connection
+        - Verify Myntra URLs are complete and valid
+        - Try different search keywords if no results
+        """)
+
+
+# Call the main logic
+try:
+    # Check if we have scraped data in session state (from main app)
+    if st.session_state.get("data", False) and "scraped_reviews" in st.session_state:
+        review_data = st.session_state["scraped_reviews"]
+        st.success("✅ Using recently scraped data from the main page")
+        create_analysis_page(review_data)
+    
+    # Fallback: check if we have data from MongoDB (legacy method)
+    elif st.session_state.get("data", False) and SESSION_PRODUCT_KEY in st.session_state:
+        mongo_data = mongo_con.get_reviews(product_name=st.session_state[SESSION_PRODUCT_KEY])
+        if mongo_data is not None and len(mongo_data) > 0:
+            st.info("📂 Using data from database")
+            create_analysis_page(mongo_data)
+        else:
+            st.warning("⚠️ No data found in database for the selected product")
+            show_no_data_message()
+    
+    else:
+        show_no_data_message()
+
+except AttributeError:
+    show_no_data_message()
+except Exception as e:
+    st.error(f"❌ Error loading data: {str(e)}")
+    show_no_data_message()
 

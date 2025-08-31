@@ -102,89 +102,281 @@ class ScrapeReviews:
         except Exception as e:
             raise CustomException(e, sys)
         
-    def scroll_to_load_reviews(self):
-        # Change the window size to load more data
-        self.driver.set_window_size(1920, 1080)  # Example window size, adjust as needed
-
-        # Get the initial height of the page
-        last_height = self.driver.execute_script("return document.body.scrollHeight")
+    def wait_for_user_scrolling(self, streamlit_callback=None):
+        """
+        Instead of automatic scrolling, let the user manually scroll through reviews.
+        This is much faster and more reliable. Can use UI callback instead of terminal input.
+        """
+        try:
+            print("📜 Manual scrolling approach activated...")
+            
+            # Maximize window for better user experience
+            self.driver.maximize_window()
+            time.sleep(2)
+            
+            # Get initial review count
+            initial_reviews = self.count_reviews_on_page()
+            print(f"Initial reviews found: {initial_reviews}")
+            
+            # Display instructions to user
+            print("\n" + "="*60)
+            print("🖱️  MANUAL SCROLLING INSTRUCTIONS")
+            print("="*60)
+            print("1. A browser window has opened with the reviews page")
+            print("2. Please MANUALLY SCROLL through ALL the reviews")
+            print("3. Scroll slowly to let all reviews load")
+            print("4. When you've scrolled through everything, come back here")
+            print("5. Press ENTER in this terminal to continue scraping")
+            print("="*60)
+            
+            # Wait for user to indicate they're done scrolling
+            if streamlit_callback:
+                # Use Streamlit UI for user interaction
+                import os
+                import time
+                
+                # Create a signal file for communication
+                signal_file = "scroll_complete.txt"
+                if os.path.exists(signal_file):
+                    os.remove(signal_file)
+                
+                print("\n" + "="*60)
+                print("🖱️  MANUAL SCROLLING - UI MODE")
+                print("="*60)
+                print("1. A browser window has opened with the reviews page")
+                print("2. Please MANUALLY SCROLL through ALL the reviews")
+                print("3. Go back to the Streamlit app and click 'Continue' button")
+                print("="*60)
+                
+                # Wait for the signal file to be created by Streamlit UI
+                while not os.path.exists(signal_file):
+                    time.sleep(1)
+                
+                # Clean up the signal file
+                os.remove(signal_file)
+                
+                # Count final reviews after user scrolling
+                final_reviews = self.count_reviews_on_page()
+                print(f"✅ User scrolling completed!")
+                print(f"📊 Total reviews found: {final_reviews}")
+                
+                if final_reviews > initial_reviews:
+                    print(f"📈 Successfully loaded {final_reviews - initial_reviews} additional reviews")
+                else:
+                    print("📋 Using initially loaded reviews")
+            else:
+                # Fallback to terminal interaction
+                input("\n⏳ Press ENTER after you've finished scrolling through all reviews...")
+            
+            # Count final reviews after user scrolling
+            final_reviews = self.count_reviews_on_page()
+            print(f"✅ User scrolling completed!")
+            print(f"� Total reviews found: {final_reviews}")
+            
+            if final_reviews > initial_reviews:
+                print(f"📈 Successfully loaded {final_reviews - initial_reviews} additional reviews")
+            else:
+                print("� Using initially loaded reviews")
+            
+        except Exception as e:
+            print(f"⚠️ Error during manual scrolling setup: {str(e)}")
+            # Continue anyway - we'll work with whatever reviews we have
+    
+    def count_reviews_on_page(self):
+        """Count the number of review elements currently loaded on the page"""
+        try:
+            # Try multiple selectors for review elements
+            selectors = [
+                "div[class*='user-review']",
+                "div[class*='review']",
+                "div.detailed-reviews-userReviewsContainer div.user-review-main",
+                "[class*='userReview']"
+            ]
+            
+            max_count = 0
+            for selector in selectors:
+                try:
+                    elements = self.driver.find_elements(By.CSS_SELECTOR, selector)
+                    max_count = max(max_count, len(elements))
+                except:
+                    continue
+            
+            return max_count
+        except:
+            return 0
+    
+    def click_load_more_buttons(self):
+        """Try to click any 'Load More' or 'Show More' buttons"""
+        try:
+            # Common button texts for loading more content
+            button_texts = ["Load More", "Show More", "View More", "More Reviews", "Load More Reviews"]
+            button_selectors = [
+                "button[class*='load']",
+                "button[class*='more']",
+                "a[class*='load']",
+                "a[class*='more']",
+                "[role='button']"
+            ]
+            
+            # Try clicking buttons by text
+            for text in button_texts:
+                try:
+                    button = self.driver.find_element(By.XPATH, f"//button[contains(text(), '{text}')]")
+                    if button.is_displayed() and button.is_enabled():
+                        print(f"🔘 Clicking '{text}' button")
+                        self.driver.execute_script("arguments[0].click();", button)
+                        time.sleep(2)
+                        return True
+                except:
+                    continue
+            
+            # Try clicking buttons by selector
+            for selector in button_selectors:
+                try:
+                    buttons = self.driver.find_elements(By.CSS_SELECTOR, selector)
+                    for button in buttons:
+                        if button.is_displayed() and button.is_enabled():
+                            button_text = button.text.lower()
+                            if any(word in button_text for word in ['load', 'more', 'show']):
+                                print(f"🔘 Clicking button: {button.text}")
+                                self.driver.execute_script("arguments[0].click();", button)
+                                time.sleep(2)
+                                return True
+                except:
+                    continue
+                    
+        except Exception as e:
+            print(f"⚠️ Error clicking load more buttons: {str(e)}")
         
-        # Scroll in smaller increments, waiting between scrolls
-        while True:
-            # Scroll down by a small amount
-            self.driver.execute_script("window.scrollBy(0, 1000);")
-            time.sleep(3)  # Adjust this delay if needed
-            
-            # Calculate the new height after scrolling
-            new_height = self.driver.execute_script("return document.body.scrollHeight")
-            
-            # Break the loop if no new content is loaded after scrolling
-            if new_height == last_height:
-                break
-            
-            # Update the last height for the next iteration
-            last_height = new_height
+        return False
 
 
 
-    def extract_products(self, product_reviews: list):
+    def extract_products(self, product_reviews: list, streamlit_callback=None):
         try:
             t2 = product_reviews["href"]
             Review_link = "https://www.myntra.com" + t2
             self.driver.get(Review_link)
             
-            self.scroll_to_load_reviews()
+            self.wait_for_user_scrolling(streamlit_callback)
             
+            # Enhanced review extraction after user scrolling
             review_page = self.driver.page_source
 
             review_html = bs(review_page, "html.parser")
-            review = review_html.findAll(
-                "div", {"class": "detailed-reviews-userReviewsContainer"}
-            )
+            
+            # Try multiple selectors to find all review containers
+            review_containers = []
+            selectors = [
+                "div.detailed-reviews-userReviewsContainer",
+                "div[class*='user-review-main']",
+                "div[class*='review-container']",
+                "[class*='userReview']"
+            ]
+            
+            for selector in selectors:
+                containers = review_html.select(selector)
+                if containers:
+                    review_containers = containers
+                    print(f"✅ Found {len(containers)} review containers using selector: {selector}")
+                    break
+            
+            if not review_containers:
+                print("⚠️ No review containers found, trying fallback method")
+                review_containers = review_html.findAll("div", {"class": "detailed-reviews-userReviewsContainer"})
 
-            for i in review:
-                user_rating = i.findAll(
-                    "div", {"class": "user-review-main user-review-showRating"}
-                )
-                user_comment = i.findAll(
-                    "div", {"class": "user-review-reviewTextWrapper"}
-                )
-                user_name = i.findAll("div", {"class": "user-review-left"})
+            all_user_ratings = []
+            all_user_comments = []
+            all_user_names = []
+            
+            # Extract all review elements from all containers
+            for container in review_containers:
+                # Extract ratings
+                ratings = container.findAll("div", {"class": "user-review-main user-review-showRating"})
+                all_user_ratings.extend(ratings)
+                
+                # Extract comments
+                comments = container.findAll("div", {"class": "user-review-reviewTextWrapper"})
+                all_user_comments.extend(comments)
+                
+                # Extract user info
+                names = container.findAll("div", {"class": "user-review-left"})
+                all_user_names.extend(names)
+            
+            # Also try direct extraction from the entire page
+            if not all_user_ratings:
+                print("⚠️ No ratings found in containers, trying direct page extraction")
+                all_user_ratings = review_html.findAll("div", {"class": "user-review-main user-review-showRating"})
+                all_user_comments = review_html.findAll("div", {"class": "user-review-reviewTextWrapper"}) 
+                all_user_names = review_html.findAll("div", {"class": "user-review-left"})
 
+            print(f"📊 Extracted: {len(all_user_ratings)} ratings, {len(all_user_comments)} comments, {len(all_user_names)} user info")
+            
+            # Use the maximum count to handle any mismatched arrays
+            max_reviews = max(len(all_user_ratings), len(all_user_comments), len(all_user_names))
+            
             reviews = []
-            for i in range(len(user_rating)):
+            for i in range(max_reviews):
                 try:
-                    rating = (
-                        user_rating[i]
-                        .find("span", class_="user-review-starRating")
-                        .get_text()
-                        .strip()
-                    )
+                    # Extract rating
+                    if i < len(all_user_ratings):
+                        rating_element = all_user_ratings[i].find("span", class_="user-review-starRating")
+                        rating = rating_element.get_text().strip() if rating_element else "No rating Given"
+                    else:
+                        rating = "No rating Given"
                 except:
                     rating = "No rating Given"
+                
                 try:
-                    comment = user_comment[i].text
+                    # Extract comment
+                    if i < len(all_user_comments):
+                        comment = all_user_comments[i].text.strip()
+                    else:
+                        comment = "No comment Given"
                 except:
                     comment = "No comment Given"
+                
                 try:
-                    name = user_name[i].find("span").text
+                    # Extract name
+                    if i < len(all_user_names):
+                        name_element = all_user_names[i].find("span")
+                        name = name_element.text.strip() if name_element else "No Name given"
+                    else:
+                        name = "No Name given"
                 except:
                     name = "No Name given"
+                
                 try:
-                    date = user_name[i].find_all("span")[1].text
+                    # Extract date
+                    if i < len(all_user_names):
+                        date_elements = all_user_names[i].find_all("span")
+                        date = date_elements[1].text.strip() if len(date_elements) > 1 else "No Date given"
+                    else:
+                        date = "No Date given"
                 except:
                     date = "No Date given"
 
-                mydict = {
-                    "Product Name": self.product_title,
-                    "Over_All_Rating": self.product_rating_value,
-                    "Price": self.product_price,
-                    "Date": date,
-                    "Rating": rating,
-                    "Name": name,
-                    "Comment": comment,
-                }
-                reviews.append(mydict)  #  a list of all dictionary elements
+                # Only add review if we have at least a rating or comment
+                if rating != "No rating Given" or comment != "No comment Given":
+                    mydict = {
+                        "Product Name": self.product_title,
+                        "Over_All_Rating": self.product_rating_value,
+                        "Price": self.product_price,
+                        "Date": date,
+                        "Rating": rating,
+                        "Name": name,
+                        "Comment": comment,
+                    }
+                    reviews.append(mydict)
+
+            print(f"✅ Successfully extracted {len(reviews)} complete reviews")
+            
+            if len(reviews) == 0:
+                print("⚠️ No reviews were extracted. This might be due to:")
+                print("   - Product has no reviews")
+                print("   - Page structure has changed")
+                print("   - Network issues during loading")
+                return None
 
             review_data = pd.DataFrame(
                 reviews,
@@ -210,7 +402,7 @@ class ScrapeReviews:
 
         product_urls.pop(skip_index)
 
-    def get_review_data(self) -> pd.DataFrame:
+    def get_review_data(self, streamlit_callback=None) -> pd.DataFrame:
         try:
             # search_string = self.request.form["content"].replace(" ", "-")
             # no_of_products = int(self.request.form["prod_no"])
@@ -227,7 +419,7 @@ class ScrapeReviews:
                 review = self.extract_reviews(product_url)
 
                 if review:
-                    product_detail = self.extract_products(review)
+                    product_detail = self.extract_products(review, streamlit_callback)
                     product_details.append(product_detail)
 
                     review_len += 1
