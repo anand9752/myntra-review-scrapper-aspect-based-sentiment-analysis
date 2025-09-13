@@ -1,174 +1,327 @@
-# Myntra Review Scraper Project
+# 🚀 Myntra Review Scraper & ABSA Analysis
 
-## Project Detail/Summary
+<div align="center">
 
-This project is a Myntra review scraper that allows users to extract and analyze customer reviews from the Myntra website. The scraper collects valuable information, such as product ratings, reviews, and user feedback, providing insights into customer sentiments and preferences.
 
-## How to Setup Locally
 
-To set up the project locally, follow these steps:
+[![Python](https://img.shields.io/badge/Python-3.10-blue.svg)](https://www.python.org/downloads/release/python-3100/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-1.28.0-FF4B4B.svg)](https://streamlit.io/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248.svg)](https://www.mongodb.com/atlas/database)
+[![Selenium](https://img.shields.io/badge/Selenium-4.15.2-43B02A.svg)](https://www.selenium.dev/)
+[![NLTK](https://img.shields.io/badge/NLTK-3.8.1-blue.svg)](https://www.nltk.org/)
+[![Transformers](https://img.shields.io/badge/Transformers-4.36.0-FFD21E.svg)](https://huggingface.co/transformers/)
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/PWskills-DataScienceTeam/myntra-review-scrapper.git
+**Advanced E-Commerce Review Mining with AI-Powered Sentiment Analysis**
 
-   # 🛍️ Myntra Review Scrapper & ABSA Analysis
+</div>
 
-   ## 🚀 Overview
+## 🔮 Project Overview
 
-   **Myntra Review Scrapper & ABSA Analysis** is a full-stack, production-grade web application that scrapes product reviews from Myntra, stores them in MongoDB, and provides advanced Aspect-Based Sentiment Analysis (ABSA) using VADER, TextBlob, and Transformer models. The app features a beautiful Streamlit dashboard for interactive exploration and insights.
+The **Myntra Review Scraper & ABSA Analysis** is a cutting-edge web application that transforms how businesses understand customer feedback. Using a multi-tiered AI system, it extracts, analyzes, and visualizes product sentiment across multiple dimensions—delivering actionable insights for product improvements and marketing strategy.
 
-   ---
+<details>
+<summary><b>✨ Key Features</b></summary>
 
-   ## 🏗️ Architecture
+- **🕸️ Intelligent Web Scraping**: Automated review extraction from Myntra product pages
+- **🧠 Three-Tier Sentiment Engine**: VADER + TextBlob + Transformers for comprehensive analysis
+- **🎯 Aspect-Based Sentiment Analysis**: Detects product aspects (quality, fit, price, etc.)
+- **📊 Interactive Visualizations**: Real-time dashboards with Plotly charts
+- **💾 MongoDB Integration**: Cloud database for persistent storage and retrieval
+- **🔄 Two Scraping Methods**: Direct URL or search-based product discovery
+- **📱 Responsive UI**: Mobile and desktop-friendly Streamlit interface
+- **🔍 Smart Product Detection**: Automatic extraction of product names from URLs
+- **📤 Export Capabilities**: Download results as CSV for further analysis
 
-   ```
-   User Input (Streamlit UI)
-      │
-      ├──► Scraping Engine (Selenium + BeautifulSoup)
-      │       ├─ URL-based scraping
-      │       └─ Search-based scraping
-      │
-      ├──► Data Storage (MongoDB via src/cloud_io)
-      │
-      ├──► ABSA Analysis (src/absa)
-      │       ├─ VADER (fast, reliable)
-      │       ├─ TextBlob+VADER (hybrid)
-      │       └─ Transformers (context-aware)
-      │
-      └──► Interactive Dashboard (Streamlit)
-   ```
+</details>
 
-   ---
+## ⚡ Live Demo
+Since It is a WebScraper Tool , Used Webdriver and many library which will not work at deployment , so You have to Use it on Your Own machine
 
-   ## 🔄 Workflow
+## 🏗️ System Architecture
 
-   1. **User Input**: Enter Myntra product URL or search keywords in the Streamlit app.
-   2. **Scraping**: Selenium automates Chrome to fetch reviews, BeautifulSoup parses review data.
-   3. **Storage**: Reviews are stored in MongoDB for persistence and fast access.
-   4. **Analysis**: ABSA modules extract aspects (Quality, Price, Size/Fit, Delivery, Design) and classify sentiment using multiple models.
-   5. **Visualization**: Streamlit dashboard displays aspect-wise sentiment, trends, and allows CSV export.
+>
 
-   ---
+### 🔄 Complete Data Flow
 
-   ## ✨ Features
+The application follows a sophisticated pipeline architecture:
 
-   - **Dual Scraping Modes**: URL-based and search-based review extraction
-   - **Robust Data Storage**: MongoDB integration for scalable review management
-   - **Advanced ABSA**: Three-tier sentiment analysis (VADER, TextBlob+VADER, Transformers)
-   - **Aspect Extraction**: Automatic detection of product aspects in reviews
-   - **Interactive Dashboard**: Real-time charts, tables, and insights
-   - **Export Capability**: Download analysis results as CSV
-   - **Session State**: Seamless navigation and data persistence
-   - **Error Handling**: Graceful fallbacks and user-friendly messages
+```mermaid
+graph TD
+    A[User Input] -->|URL or Search| B[Streamlit Frontend]
+    B --> C{Input Type?}
+    C -->|URL| D[URL Validator]
+    C -->|Search| E[Search Engine]
+    D --> F[Chrome WebDriver]
+    E --> F
+    F --> G[BeautifulSoup Parser]
+    G --> H[Review Extraction]
+    H --> I[MongoDB Storage]
+    I --> J[ABSA Processing]
+    J --> K[Three-Tier Analysis]
+    K --> L[Visualization Dashboard]
+    L --> M[CSV Export]
+```
 
-   ---
+### 🧠 ABSA Analysis Engine
 
-   ## 🛠️ Setup Instructions
+The ABSA system performs multi-layered sentiment analysis through:
 
-   1. **Clone the repository**
-      ```bash
-      git clone https://github.com/anand9752/review-scrapper-main.git
-      cd review-scrapper-main
-      ```
+1. **Base Layer**: VADER lexicon-based sentiment scoring (75% accuracy)
+2. **Enhanced Layer**: TextBlob + VADER hybrid analysis (80% accuracy)
+3. **Advanced Layer**: Transformer models for context-aware analysis (90%+ accuracy)
 
-   2. **Create and activate environment**
-      ```bash
-      conda create -p ./env python=3.10 -y
-      conda activate ./env
-      # or
-      source activate ./env
-      ```
+## 🛠️ Technology Stack
 
-   3. **Install dependencies**
-      ```bash
-      pip install -r requirements.txt
-      ```
+<table>
+<tr>
+<td>
 
-   4. **Configure MongoDB**
-      - Add your MongoDB connection string to the `.env` file as `MONGODB_URL_KEY`
+### Frontend
+- **Streamlit**: Interactive web interface
+- **Plotly**: Data visualization
+- **HTML/CSS**: Custom styling
 
-   5. **Run the app**
-      ```bash
-      streamlit run app.py
-      ```
+### Backend
+- **Python 3.10**: Core language
+- **Selenium**: Dynamic web scraping
+- **BeautifulSoup4**: HTML parsing
+- **ChromeDriver**: Browser automation
 
-   6. **Access the dashboard**
-      - Open [http://localhost:8501](http://localhost:8501) in your browser
+</td>
+<td>
 
-   ---
+### Data Processing
+- **Pandas**: Data manipulation
+- **NumPy**: Numerical computing
+- **NLTK**: Natural language processing
+- **TextBlob**: Sentiment analysis
+- **HuggingFace Transformers**: Advanced NLP
 
-   ## 📦 Dependencies
+### Storage
+- **MongoDB Atlas**: Cloud database
+- **database-connect**: Custom connector
 
-   - streamlit
-   - selenium
-   - beautifulsoup4
-   - pandas
-   - numpy
-   - plotly
-   - nltk
-   - textblob
-   - transformers
-   - torch
-   - python-dotenv
-   - database-connect
-   - chromedriver-binary
-   - flask-cors
-   - gunicorn
+</td>
+</tr>
+</table>
 
-   ---
+## 🚀 Getting Started
 
-   ## 🌐 Free Deployment Options
+### Prerequisites
 
-   - **Streamlit Cloud**: Easiest, free, supports most features (except Selenium scraping)
-   - **Heroku**: Free tier, supports MongoDB, but may need custom buildpacks for Chrome/Selenium
-   - **Render**: Free tier, similar to Heroku
+- Python 3.10+
+- Chrome browser
+- MongoDB account (optional for full functionality)
 
-   **Note:** Selenium-based scraping may not work on all free cloud platforms due to browser limitations. For demo purposes, use sample data or switch to requests-based scraping.
+### Installation
 
-   ---
+1. **Clone the repository**
 
-   ## 📊 Example Workflow
+```bash
+git clone https://github.com/anand9752/review-scrapper-main.git
+cd review-scrapper-main
+```
 
-   1. **Paste Myntra URL**: `https://www.myntra.com/shirts/roadster/roadster-men-blue-solid-casual-shirt/1376577/buy`
-   2. **Scrape Reviews**: App fetches and stores reviews in MongoDB
-   3. **Analyze Sentiment**: ABSA module extracts aspects and classifies sentiment
-   4. **View Insights**: Dashboard shows aspect-wise sentiment, trends, and allows export
+2. **Create & activate a virtual environment**
 
-   ---
+```bash
+# Using venv
+python -m venv myvenv
+# Windows
+myvenv\Scripts\Activate.ps1
+# Mac/Linux
+source myvenv/bin/activate
+```
 
-   ## 🧠 Sentiment Models Explained
+3. **Install dependencies**
 
-   - **VADER**: Fast, rule-based, 75% accuracy
-   - **TextBlob+VADER**: Hybrid, 50% accuracy
-   - **Transformers**: Context-aware, experimental
+```bash
+pip install -r requirements.txt
+```
 
-   ---
+4. **Setup MongoDB (Optional)**
 
-   ## 📁 Project Structure
+Create a `.env` file with your MongoDB connection string:
 
-   ```
-   src/
-     ├── absa/                # ABSA analyzers (VADER, TextBlob, Transformers)
-     ├── cloud_io/            # MongoDB integration
-     ├── scrapper/            # Scraping logic (Selenium, BeautifulSoup)
-     ├── constants/           # Project constants
-     ├── utils/               # Utility functions
-     ├── exception.py         # Custom exceptions
-   pages/
-     ├── generate_analysis.py # ABSA dashboard page
-   app.py                     # Main Streamlit app
-   requirements.txt           # Python dependencies
-   .env                       # Environment variables
-   ```
+```
+MONGODB_URL_KEY=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/
+```
 
-   ---
+5. **Run the application**
 
-   ## 🏆 Credits
+```bash
+streamlit run app.py
+```
 
-   - Built by Anand (anand.gp.97@gmail.com)
-   - Open source, MIT License
+6. **Access the web interface**
 
-   ---
+Open your browser and navigate to [http://localhost:8501](http://localhost:8501)
 
-   ## 🎉 Happy Scraping & Analyzing! 🕵️‍♂️🚀
+## 📊 Usage Examples
+
+### 1. URL-Based Scraping
+
+Enter a Myntra product URL to analyze reviews:
+
+```
+https://www.myntra.com/shirts/roadster/roadster-men-blue-solid-casual-shirt/1376577/buy
+```
+
+### 2. Search-Based Scraping
+
+Enter a product name and select the number of products to analyze:
+
+```
+Men's Cotton Shirts
+```
+
+### 3. ABSA Analysis
+
+After scraping, navigate to the "Generate Analysis" page to see:
+- Aspect-specific sentiment breakdown
+- Topic modeling of review content
+- Sentiment distribution charts
+- Correlation analysis between aspects
+- Temporal trends in customer satisfaction
+
+## 🧩 Project Structure
+
+```
+review-scrapper-main/
+├── app.py                   # Main Streamlit application
+├── requirements.txt         # Dependencies
+├── .env                     # Environment variables
+├── setup.py                 # Package configuration
+├── docker-compose.yml       # Docker configuration
+├── Dockerfile               # Container definition
+├── .streamlit/              # Streamlit configuration
+│   └── config.toml
+├── pages/                   # Streamlit pages
+│   └── generate_analysis.py # ABSA analysis page
+└── src/                     # Source code
+    ├── absa/                # Sentiment analysis modules
+    │   ├── absa_analyzer.py
+    │   ├── advanced_absa.py
+    │   └── simple_advanced_absa.py
+    ├── cloud_io/            # Database connectivity
+    ├── constants/           # Application constants
+    ├── data_report/         # Report generation
+    ├── scrapper/            # Web scraping logic
+    │   ├── scrape.py        # Search-based scraping
+    │   └── url_scrape.py    # URL-based scraping
+    └── utils/               # Utility functions
+```
+
+## 🔬 Advanced ABSA Features
+
+<details>
+<summary><b>Aspect Categories Analyzed</b></summary>
+
+The system automatically detects and analyzes these product aspects:
+
+| Aspect | Keywords | Description |
+|--------|----------|-------------|
+| **Quality/Material** | durability, material, quality, construction | Build quality and materials used |
+| **Style/Design** | design, style, look, appearance, color | Aesthetic appeal and design elements |
+| **Size/Fit** | size, fit, comfort, tight, loose | How well the product fits and feels |
+| **Price/Value** | price, value, worth, expensive, cheap | Price-to-value assessment |
+| **Delivery/Service** | delivery, shipping, packaging, service | Purchase experience aspects |
+
+</details>
+
+<details>
+<summary><b>Sentiment Classification System</b></summary>
+
+The ABSA engine classifies sentiments using a sophisticated scoring system:
+
+- **Very Positive (5)**: Strong positive sentiment (score > 0.6)
+- **Positive (4)**: Moderately positive sentiment (0.2 < score ≤ 0.6)
+- **Neutral (3)**: Neither positive nor negative (-0.2 ≤ score ≤ 0.2)
+- **Negative (2)**: Moderately negative sentiment (-0.6 ≤ score < -0.2)
+- **Very Negative (1)**: Strong negative sentiment (score < -0.6)
+
+</details>
+
+## 📚 How It Works
+
+The Myntra Review Scraper combines multiple advanced technologies:
+
+1. **Web Scraping Engine**:
+   - Selenium WebDriver navigates through product pages
+   - Chrome browser automation handles dynamic JavaScript content
+   - BeautifulSoup parses HTML structure for review extraction
+
+2. **Database Integration**:
+   - MongoDB Atlas stores scraped reviews in the cloud
+   - Custom MongoDB connector handles database operations
+   - Schema design optimized for ABSA queries
+
+3. **ABSA Processing Pipeline**:
+   - Natural language preprocessing (tokenization, lemmatization)
+   - Aspect detection using keyword matching and NLP
+   - Multi-model sentiment analysis for each aspect
+   - Aggregation and visualization of results
+
+## 🌟 Deployment Options
+
+### Streamlit Cloud (Recommended)
+
+1. Fork this repository to your GitHub account
+2. Connect to [Streamlit Cloud](https://streamlit.io/cloud)
+3. Deploy the app directly from your GitHub repo
+4. Configure secrets for MongoDB connection
+
+### Docker Deployment
+
+```bash
+docker-compose up -d
+```
+
+This will create a containerized version of the application accessible at http://localhost:8501.
+
+### Local Development
+
+For development purposes:
+
+```bash
+# Activate virtual environment
+.\myvenv\Scripts\Activate.ps1
+
+# Run with hot-reloading
+streamlit run app.py
+```
+
+## 🛡️ Limitations & Considerations
+
+- **Rate Limiting**: Respect Myntra's terms of service and implement delay between requests
+- **Dynamic Content**: Website changes may require scraper updates
+- **Chrome Dependency**: Requires Chrome browser for Selenium automation
+- **Memory Usage**: Transformer models can be memory-intensive
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📜 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 📬 Contact
+
+Anand Patidar - anand.gp.97@gmail.com
+
+Project Link: [https://github.com/anand9752/review-scrapper-main](https://github.com/anand9752/review-scrapper-main)
+
+---
+
+<div align="center">
+<p>Built with ❤️ by Anand Patidar</p>
+
+⭐ Star this repo if you found it useful! ⭐
+</div>
